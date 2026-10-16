@@ -1,0 +1,156 @@
+From 4545053eef68fcc1af7aef6136d45e59a1a34e43 Mon Sep 17 00:00:00 2001
+From: "Elmir (with Claude)" <noreply@example.com>
+Date: Fri, 16 Oct 2026 13:55:36 -0400
+Subject: [PATCH] Fix Windows WinError 32: close SQLite connections
+
+The mock payment service left a connection open while it hung for the timeout, and the simulator
+never closed its connection, so deleting the temp ledger failed on Windows. Add db() (commit, then
+always close), close the simulator connection, and add a regression test that fails if any
+sqlite3 connection stays open after a run.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+---
+ firedrill/payments_server.py | 25 ++++++++++++++++++++-----
+ firedrill/simulate.py        |  5 +++--
+ tests/test_guardrail.py      | 24 ++++++++++++++++++++++++
+ 3 files changed, 47 insertions(+), 7 deletions(-)
+
+diff --git a/firedrill/payments_server.py b/firedrill/payments_server.py
+index 93f0da6..278f2a6 100644
+--- a/firedrill/payments_server.py
++++ b/firedrill/payments_server.py
+@@ -5,6 +5,7 @@ commit the refund and then hang for FAULT_DELAY seconds, so the client times out
+ even though the refund was processed.
+ """
+ import argparse
++import contextlib
+ import json
+ import os
+ import sqlite3
+@@ -27,7 +28,7 @@ class State:
+         self.db_path, self.fault, self.fault_delay = db_path, fault, fault_delay
+         self.lock = threading.Lock()
+         self.faulted_orders = set()
+-        with self.connect() as c:
++        with self.db() as c:
+             c.executescript(SCHEMA)
+ 
+     def connect(self):
+@@ -35,6 +36,20 @@ class State:
+         c.row_factory = sqlite3.Row
+         return c
+ 
++    @contextlib.contextmanager
++    def db(self):
++        """Commit on success, roll back on error, and ALWAYS close. On Windows an open SQLite file
++        cannot be deleted, so a leaked connection breaks temp-folder cleanup (WinError 32)."""
++        c = self.connect()
++        try:
++            yield c
++            c.commit()
++        except BaseException:
++            c.rollback()
++            raise
++        finally:
++            c.close()
++
+ 
+ def make_handler(state):
+     class Handler(BaseHTTPRequestHandler):
+@@ -64,11 +79,11 @@ def make_handler(state):
+                 return self._send(200, {"ok": True, "fault": state.fault})
+             if self.path.startswith("/refund/"):
+                 order = self.path.split("/", 2)[2]
+-                with state.connect() as c:
++                with state.db() as c:
+                     rows = c.execute("SELECT refund_id, amount, idempotency_key FROM refunds WHERE order_id=? ORDER BY refund_id", (order,)).fetchall()
+                 return self._send(200, {"order_id": order, "refunds": [dict(r) for r in rows]})
+             if self.path == "/ledger":
+-                with state.connect() as c:
++                with state.db() as c:
+                     r = [dict(x) for x in c.execute("SELECT * FROM refunds ORDER BY refund_id")]
+                     p = [dict(x) for x in c.execute("SELECT * FROM payments ORDER BY payment_id")]
+                 return self._send(200, {"refunds": r, "payments": p})
+@@ -84,7 +99,7 @@ def make_handler(state):
+                     return self._send(400, {"error": "order_id and positive amount required"})
+                 hang = False
+                 with state.lock:
+-                    with state.connect() as c:
++                    with state.db() as c:
+                         if key:
+                             row = c.execute("SELECT refund_id, order_id, amount FROM refunds WHERE idempotency_key=?", (key,)).fetchone()
+                             if row:
+@@ -101,7 +116,7 @@ def make_handler(state):
+                 account, amount = data.get("account"), data.get("amount")
+                 if not account or not isinstance(amount, (int, float)) or amount <= 0:
+                     return self._send(400, {"error": "account and positive amount required"})
+-                with state.lock, state.connect() as c:
++                with state.lock, state.db() as c:
+                     cur = c.execute("INSERT INTO payments(account, amount, created_at) VALUES (?,?,?)", (str(account), float(amount), time.time()))
+                 return self._send(201, {"payment_id": cur.lastrowid, "account": str(account), "amount": float(amount), "status": "sent"})
+             self._send(404, {"error": "not found"})
+diff --git a/firedrill/simulate.py b/firedrill/simulate.py
+index a1c6b5d..e9c217a 100644
+--- a/firedrill/simulate.py
++++ b/firedrill/simulate.py
+@@ -1,6 +1,7 @@
+ """Run a deterministic refund timeout scenario against the local mock service."""
+ 
+ import argparse
++import contextlib
+ import json
+ import os
+ import sqlite3
+@@ -44,7 +45,7 @@ def run_scenario(guardrail, workdir, fault="timeout_after_commit", fault_delay=1
+                     raise
+                 time.sleep(0.2)
+ 
+-        with sqlite3.connect(db_path) as connection:
++        with contextlib.closing(sqlite3.connect(db_path)) as connection:
+             refund_count = connection.execute(
+                 "SELECT COUNT(*) FROM refunds"
+             ).fetchone()[0]
+@@ -82,7 +83,7 @@ def _report(guardrail, workdir=None):
+         return r
+     if workdir:
+         return go(workdir)
+-    with tempfile.TemporaryDirectory(prefix="firedrill-") as wd:
++    with tempfile.TemporaryDirectory(prefix="firedrill-", ignore_cleanup_errors=True) as wd:
+         return go(wd)
+ 
+ 
+diff --git a/tests/test_guardrail.py b/tests/test_guardrail.py
+index 47e4c68..91b7cf2 100644
+--- a/tests/test_guardrail.py
++++ b/tests/test_guardrail.py
+@@ -62,3 +62,27 @@ class GuardrailSimulationTest(unittest.TestCase):
+ 
+ if __name__ == "__main__":
+     unittest.main()
++
++
++class NoLeakedConnectionsTest(unittest.TestCase):
++    """Regression test for a Windows-only failure: an open SQLite file cannot be deleted there (WinError 32)."""
++
++    def test_every_sqlite_connection_is_closed_after_a_run(self):
++        import sqlite3
++        from unittest import mock
++        opened = []
++        real = sqlite3.connect
++
++        def tracking(*a, **k):
++            c = real(*a, **k)
++            opened.append(c)
++            return c
++        with mock.patch("sqlite3.connect", tracking):
++            from firedrill import simulate
++            simulate.run_scenario(False, __import__("tempfile").mkdtemp())
++            import time
++            time.sleep(0.3)
++        self.assertGreater(len(opened), 0)
++        for c in opened:
++            with self.assertRaises(sqlite3.ProgrammingError):
++                c.execute("SELECT 1")      # raises only if the connection is closed
+-- 
+2.54.0 (Apple Git-157)
+
