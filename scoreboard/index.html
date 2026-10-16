@@ -46,7 +46,8 @@ function card(id,title,r){
 function render(){
   card("off","BEFORE GUARDRAIL",DATA.off);card("on","AFTER GUARDRAIL",DATA.on);
   var s=[DATA.off,DATA.on].map(function(r){return r&&r.source}),llm=s.every(function(x){return x==="llm_agent"});
-  document.getElementById("src").innerHTML=llm?'<span class="src llm">Measured: LLM agent run</span>':'<span class="src sim">SAMPLE DATA: scripted simulation, not an LLM run</span>';
+  var o=DATA.off||{},n=DATA.on||{};
+  document.getElementById("src").innerHTML=llm?'<span class="src llm">Measured: LLM agent ('+esc(o.model)+'), real Daytona sandboxes. Unsafe runs: '+esc(o.runs_unsafe)+' of '+esc(o.runs_total)+' without guardrail, '+esc(n.runs_unsafe)+' of '+esc(n.runs_total)+' with it. Mock payment service.</span>':'<span class="src sim">SAMPLE DATA: scripted simulation, not an LLM run</span>';
 }
 function pick(id,key){document.getElementById(id).addEventListener("change",function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{DATA[key]=JSON.parse(rd.result);render()}catch(x){alert("Not valid JSON")}};rd.readAsText(f)})}
 pick("fo","off");pick("fn","on");render();
