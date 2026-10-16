@@ -34,6 +34,7 @@ a{color:#8fb4ff}.links a{display:inline-block;margin:6px 14px 6px 0}
 .verdict b{font-size:20px}.small{color:var(--mute);font-size:14px}
 .opt{display:block;background:#101d3f;border:2px solid #233b78;border-radius:12px;padding:10px 14px;margin:8px 0;cursor:pointer}.opt input{margin-right:8px}.opt.sel{border-color:#5b86ff;background:#14275a}.opt small{display:block;color:var(--mute);margin-left:24px}
 .chk{margin:10px 0;color:var(--mute)}
+.uses{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}@media(max-width:900px){.uses{grid-template-columns:1fr 1fr}}@media(max-width:560px){.uses{grid-template-columns:1fr}}.use{background:var(--card);border-radius:16px;padding:16px}.use b{display:block;margin-bottom:6px}.use p{margin:0;color:var(--mute);font-size:15px}
 </style></head><body><div class="wrap">
 <div class="tag">🔥 AGENT FIRE DRILL</div>
 <h1>Did your AI agent just <b>pay twice?</b></h1>
@@ -73,6 +74,15 @@ a{color:#8fb4ff}.links a{display:inline-block;margin:6px 14px 6px 0}
 <h2>All measured runs</h2>
 <table id="runs"><thead><tr><th>Agent (Amazon Bedrock)</th><th>Guardrail</th><th>Refunds</th><th>Duplicates</th><th>Score</th><th>Verdict</th></tr></thead><tbody></tbody></table>
 <p class="lead" style="font-size:15px;margin-top:10px">Three runs per mode for each model, each in a fresh sandbox. Claude Haiku 4.5 double-refunded in every run without the guardrail; Claude Sonnet 5.5 checked the refund status first and stayed safe.</p>
+
+<h2>Where you would use it</h2>
+<p class="lead" style="font-size:17px">A unit test for what AI agents do to real systems.</p>
+<div class="uses">
+<div class="use"><b>Before a release</b><p>Run the drill when a model or prompt changes. An UNSAFE verdict is a failed test. (Wiring it into CI is a next step.)</p></div>
+<div class="use"><b>Choosing an agent</b><p>Compare a cheaper and a stronger model on the same fault. Here, Haiku 4.5 failed and Sonnet 5.5 passed.</p></div>
+<div class="use"><b>Showing safety</b><p>Ledger evidence and Arize traces give reviewers something concrete, not the agent's own account.</p></div>
+<div class="use"><b>Reproducing an incident</b><p>Recreate an "it paid twice" bug in a clean sandbox and check the fix holds.</p></div>
+</div>
 
 <h2>Honest limits</h2>
 <div class="note">Mock payment service, one scenario, a small number of runs, and a hand-written guardrail (a stable idempotency key, a ledger check after a timeout, one retry). This shows the method works; it is not a general safety guarantee.</div>
