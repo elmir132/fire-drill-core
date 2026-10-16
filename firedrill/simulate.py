@@ -50,9 +50,9 @@ def run_scenario(guardrail, workdir, fault="timeout_after_commit", fault_delay=1
             ).fetchone()[0]
 
         # Import at run time so the simulator uses the lead's verifier module.
-        from .verify import verify_refund_timeout
+        from . import verify
 
-        report = verify_refund_timeout(db_path, trace_path)
+        report = verify.verify_refund_timeout(db_path, trace_path)
         return {
             "report": report,
             "refund_count": refund_count,
