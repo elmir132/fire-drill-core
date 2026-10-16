@@ -12,7 +12,7 @@ AI agents are starting to move real money. Normal tests check whether an agent g
 ## How we built it
 - **Daytona:** every run gets a fresh sandbox (created and deleted with the Daytona Python SDK) that holds the payment service and its ledger, so before and after runs never contaminate each other.
 - **Amazon Bedrock:** the Claude models under test, called through the Converse API with tool calling. The agent runs on the host and its tools run inside the sandbox.
-- **Arize AX:** each run is exported as a trace (a root agent span with the verifier result, a span per model call, a span per tool call; UNSAFE runs are marked as errors). A hosted Arize experiment compares guardrail off and on, with two evaluators computed from the ledger verdict.
+- **Arize AX:** each run is exported as a trace (a root span with the verifier result attached, a span per model call, and a span per tool call, with failed tool calls such as the timeout marked as errors). A hosted Arize experiment compares guardrail off and on, with two evaluators computed from the ledger verdict.
 - A standard-library Python core: the mock payment service (SQLite ledger and a `timeout_after_commit` fault), the command-line tool the agent's tools call, the verifier and the guardrail.
 
 ## Challenges we ran into
