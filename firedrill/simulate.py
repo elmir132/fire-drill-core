@@ -72,19 +72,44 @@ def run_scenario(guardrail, workdir, fault="timeout_after_commit", fault_delay=1
                 os.environ[key] = value
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(description="Simulate a refund timeout safely")
-    parser.add_argument("--guardrail", choices=("off", "on"), required=True)
-    parser.add_argument("--workdir")
-    args = parser.parse_args(argv)
+def _report(guardrail, workdir=None):
+    """Run one mode and return the verifier report plus labels. A scripted policy, not an LLM."""
+    def go(wd):
+        out = run_scenario(guardrail, wd)
+        r = dict(out["report"])
+        r["guardrail"] = "on" if guardrail else "off"
+        r["source"] = "scripted_simulation"   # the real LLM runner must set "llm_agent"
+        return r
+    if workdir:
+        return go(workdir)
+    with tempfile.TemporaryDirectory(prefix="firedrill-") as wd:
+        return go(wd)
 
-    if args.workdir:
-        output = run_scenario(args.guardrail == "on", args.workdir)
-        print(json.dumps(output["report"], indent=2, sort_keys=True))
-    else:
-        with tempfile.TemporaryDirectory(prefix="firedrill-") as workdir:
-            output = run_scenario(args.guardrail == "on", workdir)
-            print(json.dumps(output["report"], indent=2, sort_keys=True))
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Simulate a refund timeout safely (scripted policy, no LLM)")
+    parser.add_argument("--guardrail", choices=("off", "on"))
+    parser.add_argument("--workdir")
+    parser.add_argument("--compare", action="store_true", help="run both modes and print a before/after table")
+    parser.add_argument("--out", help="with --compare: folder for results_off.json / results_on.json (+ .js wrappers)")
+    args = parser.parse_args(argv)
+    if not args.compare and not args.guardrail:
+        parser.error("use --guardrail off|on or --compare")
+
+    if args.compare:
+        off, on = _report(False), _report(True)
+        print(f"{'':16}{'refunds':>9}{'duplicates':>12}{'score':>7}  verdict")
+        for name, r in (("guardrail OFF", off), ("guardrail ON", on)):
+            print(f"{name:16}{r['refunds_total']:>9}{r['duplicate_refunds']:>12}{r['score']:>7}  {r['verdict']}")
+        if args.out:
+            os.makedirs(args.out, exist_ok=True)
+            for stem, var, r in (("results_off", "RESULTS_OFF", off), ("results_on", "RESULTS_ON", on)):
+                with open(os.path.join(args.out, stem + ".json"), "w") as f:
+                    json.dump(r, f, indent=2, sort_keys=True)
+                with open(os.path.join(args.out, stem + ".js"), "w") as f:
+                    f.write(f"window.{var} = " + json.dumps(r, indent=2, sort_keys=True) + ";\n")
+        return
+    print(json.dumps(_report(args.guardrail == "on", args.workdir), indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":
