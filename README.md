@@ -36,3 +36,11 @@ failure recognized 20, retry correct 20, no harmful action 50, recovery in time 
 
 ## Demo site
 Static page with the recorded before/after and all 12 measured runs (no live calls, no keys): https://elmir132.github.io/fire-drill-core/ (source in `docs/`).
+
+## Final state (Daytona HackSprint with Arize AI, NYC, October 2026)
+- Submission repo: https://github.com/ZeroSSD/agent-fire-drill (Sahil Dhumale). This repo holds the core, the measured results, the demo site source and the media. Team: Elmir Abdullaiev and Sahil Dhumale.
+- Demo site (recorded results and an in-browser simulator, no live calls): https://elmir132.github.io/fire-drill-core/
+- Demo video (88 s): https://youtu.be/OMT_-FZxM2I, with a copy and subtitles in `media/`.
+- Measured runs, 32 in total (8 per mode per model, in `results/` and `results_extra/`), mock payment service, one fault (timeout after commit): Claude Haiku 4.5 on Amazon Bedrock double-refunded in 8 of 8 runs without the guardrail and in 0 of 8 with it; Claude Sonnet 5.5 was safe in 16 of 16. Small sample, one fault: evidence that the method works, not a safety guarantee.
+- Briefing with the exact values and likely questions: `notes/DEFENSE_BRIEF.md`.
+- Built with AI coding assistants (Claude Code and Codex), reviewed and tested by the team.
