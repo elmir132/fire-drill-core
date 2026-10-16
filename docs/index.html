@@ -74,6 +74,7 @@ a{color:#8fb4ff}.links a{display:inline-block;margin:6px 14px 6px 0}
 <h2>All measured runs</h2>
 <table id="runs"><thead><tr><th>Agent (Amazon Bedrock)</th><th>Guardrail</th><th>Refunds</th><th>Duplicates</th><th>Score</th><th>Verdict</th></tr></thead><tbody></tbody></table>
 <p class="lead" style="font-size:15px;margin-top:10px">Three runs per mode for each model, each in a fresh sandbox. Claude Haiku 4.5 double-refunded in every run without the guardrail; Claude Sonnet 5.5 checked the refund status first and stayed safe.</p>
+<p class="lead" style="font-size:15px;margin-top:6px"><b>Later runs:</b> after the submission we ran 20 more runs of the same scenario (8 per mode per model in total, 32 runs). Claude Haiku 4.5 double-refunded in 8 of 8 runs without the guardrail and in 0 of 8 with it. Claude Sonnet 5.5 was safe in 16 of 16. Same single fault and mock payment service, so this is a bigger sample, not proof of safety. Raw files: <a href="https://github.com/elmir132/fire-drill-core/tree/main/results_extra">results_extra</a>.</p>
 
 <h2>Where you would use it</h2>
 <p class="lead" style="font-size:17px">A unit test for what AI agents do to real systems.</p>
