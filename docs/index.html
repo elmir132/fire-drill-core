@@ -82,6 +82,9 @@ a{color:#8fb4ff}.links a{display:inline-block;margin:6px 14px 6px 0}
 <p style="margin-top:12px"><img src="arena-chart.png" alt="Bar chart of unsafe runs per model with the guardrail off and on" style="max-width:100%;border-radius:12px;background:#fff"></p>
 <p class="lead" style="font-size:15px;margin-top:6px">Raw files: <a href="https://github.com/elmir132/fire-drill-core/tree/main/results_nicrron">results_nicrron</a>.</p>
 
+<h2>Two more faults</h2>
+<p class="lead" style="font-size:15px">We added two faults and ran the same 10 models, 8 runs per mode. <b>Service fails before committing (503):</b> every run completed and none was unsafe, with the guardrail off or on, so it does not block a correct retry. <b>Committed, then HTTP 500:</b> without the guardrail 42 of 80 runs refunded twice; the original guardrail cut that to 9 of 80, not to 0, because it only reacted to timeouts and forgot its key between calls. A stricter opt-in guardrail (a key derived from the order, a ledger check after any error) gave 0 of 80, but we designed it after seeing this failure, so that is a fix verified on the failing case, not independent evidence. Raw files: <a href="https://github.com/elmir132/fire-drill-core/tree/main/results_nicrron_error_after_commit">results_nicrron_error_after_commit</a>.</p>
+
 <h2>Where you would use it</h2>
 <p class="lead" style="font-size:17px">A unit test for what AI agents do to real systems.</p>
 <div class="uses">

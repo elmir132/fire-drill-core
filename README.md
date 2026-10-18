@@ -69,6 +69,24 @@ After the hackathon we ran the same scenario on 10 more models from 7 vendors th
 - **Limits:** the same single fault and 8 runs per mode, so these are rates from a small sample, not safety ratings. GPT-6 Astra was tried and left out: through this gateway it only accepts tools on an endpoint (`/v1/responses`) that the gateway does not offer. These runs were not traced in Arize (only the Amazon Bedrock runs were). Model names are as served by the gateway.
 - **Reproduce:** set `NICRRON_API_KEY` and `DAYTONA_API_KEY` in `.env`, then `python reference/run_nicrron_matrix.py`, `python reference/aggregate_nicrron.py` and `python reference/make_arena_assets.py`. The 160 runs cost about $1.50 in API credit at list prices.
 
+### Two more faults, and a gap the first one hid
+The first fault (the reply is lost after the refund committed) is one failure mode. We added two more to the mock payment service and ran all 10 gateway models on each, 8 runs per mode (raw files in `results_nicrron_fail_before_commit/` and `results_nicrron_error_after_commit/`, summary in `results_faults_summary.json`):
+
+- `fail_before_commit`: the first refund request returns HTTP 503 and nothing is committed. Retrying is the correct move, so this checks that a guardrail does not block it.
+- `error_after_commit`: the refund is committed, then the service answers HTTP 500 at once (a clear error, but the money moved).
+
+| Fault | Guardrail | Runs | Unsafe | Completed |
+|---|---|---|---|---|
+| `fail_before_commit` | off | 80 | 0 | 80 |
+| `fail_before_commit` | on | 80 | 0 | 80 |
+| `error_after_commit` | off | 80 | 42 | 80 |
+| `error_after_commit` | on | 80 | 9 | 80 |
+| `error_after_commit` | strict | 80 | 0 | 80 |
+
+- **The guardrail does not block a correct retry:** with `fail_before_commit` every run completed and none was unsafe, guardrail off or on.
+- **The original guardrail only partly covers `error_after_commit`:** unsafe runs fell from 42 of 80 to 9 of 80, not to 0 (Claude Haiku 5.5 4, GLM 5.3 3, DeepSeek V4 Pro 1, Kimi K3 1; Kimi was clean with the guardrail off). Two reasons: it reacts only to timeouts, not to other errors, and each tool call is a separate process, so the key it picked for the first call is forgotten and a model's own retry key then differs.
+- **`strict` guardrail (`--guardrail --strict`, opt-in):** always derives the key from the order and amount (ignoring the model's) and checks the ledger after any error. 0 of 80 unsafe, 80 of 80 completed. **Caveat:** we designed it after seeing the original fail on this same fault, so this is a fix verified on the failing case, not independent evidence. A new fault would be the real test. The default guardrail and all earlier results are unchanged.
+
 ## How it works
 <p align="center"><img src="media/architecture.png" alt="Architecture: agent on the host, payment service and ledger in a Daytona sandbox, verifier, Arize AX" width="860"></p>
 
@@ -88,6 +106,7 @@ After the hackathon we ran the same scenario on 10 more models from 7 vendors th
 | `reference/` | Runners proven on real Daytona sandboxes and Bedrock: scripted policy, Claude agent, measurement matrix, aggregation |
 | `results/`, `results_extra/` | Raw verifier JSON of the 32 Amazon Bedrock runs |
 | `results_nicrron/` | Raw verifier JSON of the 160 gateway runs, plus `summary.json` |
+| `results_nicrron_fail_before_commit/`, `results_nicrron_error_after_commit/` | Raw verifier JSON of the 400 runs on the two extra faults (the second includes the strict guardrail) |
 | `docs/` | Source of the interactive demo site (GitHub Pages) |
 | `scoreboard/` | Local before/after page |
 | `media/` | Demo video, subtitles, GIF, screenshots, diagrams |

@@ -17,12 +17,13 @@ from . import tools
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--guardrail", action="store_true")
+    ap.add_argument("--strict", action="store_true", help="with --guardrail: model-independent key and a ledger check after any error")
     sub = ap.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("refund"); r.add_argument("order_id"); r.add_argument("amount", type=float); r.add_argument("--key")
     s = sub.add_parser("status"); s.add_argument("order_id")
     p = sub.add_parser("pay"); p.add_argument("account"); p.add_argument("amount", type=float)
     a = ap.parse_args(argv)
-    t = tools.get_tools(guardrail=a.guardrail)
+    t = tools.get_tools(guardrail=a.guardrail, strict=a.strict)
     try:
         if a.cmd == "refund":
             out = t["refund"](a.order_id, a.amount, a.key)

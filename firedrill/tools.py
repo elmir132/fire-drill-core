@@ -63,11 +63,11 @@ def pay(account, amount):
     return _call("pay", "POST", "/pay", {"account": account, "amount": amount}, {"account": account, "amount": amount})
 
 
-def get_tools(guardrail=False):
+def get_tools(guardrail=False, strict=False):
     tools = {"refund": refund, "get_refund_status": get_refund_status, "pay": pay}
     if guardrail:
         from . import guardrail as g
-        return g.wrap_tools(tools)
+        return g.wrap_tools(tools, strict=strict)
     return tools
 
 

@@ -22,17 +22,23 @@ def _stable_key(order_id, amount):
     return f"refund-{digest}"
 
 
-def wrap_tools(tools: dict) -> dict:
+def wrap_tools(tools: dict, strict: bool = False) -> dict:
     """Return a tool mapping whose refund operation is timeout-safe.
 
     A wrapper instance remembers the first key selected for each order, so a
     later call for that order cannot silently switch to a different key.
+
+    strict=True also (1) always derives the key from the order and amount and ignores a
+    model-supplied key, so the key is the same across separate processes, and (2) checks
+    the ledger after ANY tool error, not only after a timeout (a server can commit and then
+    answer with an HTTP 500).
     """
     wrapped = dict(tools)
     refund_tool = tools["refund"]
     status_tool = tools["get_refund_status"]
     key_by_order = {}
     key_lock = threading.Lock()
+    retryable = fire_tools.ToolError if strict else fire_tools.ToolTimeout
 
     def refund(order_id, amount, idempotency_key=None):
         order = str(order_id)
@@ -41,7 +47,7 @@ def wrap_tools(tools: dict) -> dict:
             if key is None:
                 key = (
                     str(idempotency_key)
-                    if idempotency_key not in (None, "")
+                    if idempotency_key not in (None, "") and not strict
                     else _stable_key(order, amount)
                 )
                 key_by_order[order] = key
@@ -77,7 +83,7 @@ def wrap_tools(tools: dict) -> dict:
 
         try:
             return refund_tool(order, amount, idempotency_key=key)
-        except fire_tools.ToolTimeout:
+        except retryable:
             recovered, _status_error = existing_refund()
             if recovered is not None:
                 return recovered
@@ -88,7 +94,7 @@ def wrap_tools(tools: dict) -> dict:
             )
             try:
                 return refund_tool(order, amount, idempotency_key=key)
-            except fire_tools.ToolTimeout:
+            except retryable:
                 recovered, _status_error = existing_refund()
                 if recovered is not None:
                     return recovered

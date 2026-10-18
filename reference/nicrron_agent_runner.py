@@ -61,10 +61,11 @@ def chat(model, messages, tools, max_tokens=1500):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--guardrail", choices=["off", "on"], required=True)
+    ap.add_argument("--guardrail", choices=["off", "on", "strict"], required=True)
     ap.add_argument("--model", required=True)
     ap.add_argument("--out")
     ap.add_argument("--max-turns", type=int, default=8)
+    ap.add_argument("--fault", default="timeout_after_commit", choices=["timeout_after_commit", "fail_before_commit", "error_after_commit"])
     a = ap.parse_args()
     load_env()
     for k in ("DAYTONA_API_KEY", "NICRRON_API_KEY"):
@@ -75,7 +76,7 @@ def main():
     from firedrill.tools import TOOL_SCHEMAS
 
     files = [(f, f"{REMOTE}/firedrill/{f.name}") for f in sorted((ROOT / "firedrill").glob("*.py"))] + [(ROOT / "verify.py", f"{REMOTE}/verify.py")]
-    g = "--guardrail " if a.guardrail == "on" else ""
+    g = {"off": "", "on": "--guardrail ", "strict": "--guardrail --strict "}[a.guardrail]
 
     def cli(sandbox, name, args):
         if name == "refund":
@@ -92,7 +93,7 @@ def main():
     try:
         client = Daytona()
         sandbox = client.create(CreateSandboxFromSnapshotParams(name=f"fire-drill-nicrron-{a.guardrail}-{uuid4().hex[:8]}", language="python", public=False, auto_stop_interval=5, auto_delete_interval=0,
-                                env_vars={"FAULT": "timeout_after_commit", "TRACE_PATH": f"{REMOTE}/trace.jsonl", "REQUEST_TIMEOUT": "3"}), timeout=90)
+                                env_vars={"FAULT": a.fault, "TRACE_PATH": f"{REMOTE}/trace.jsonl", "REQUEST_TIMEOUT": "3"}), timeout=90)
         sandbox.fs.create_folder(REMOTE, "755"); sandbox.fs.create_folder(f"{REMOTE}/firedrill", "755")
         for local, dest in files:
             sandbox.fs.upload_file(str(local), dest, timeout=30)
@@ -128,7 +129,7 @@ def main():
         time.sleep(1)
         v = sandbox.process.exec("python3 verify.py refund_timeout --db ledger.db --trace trace.jsonl", cwd=REMOTE, timeout=30)
         result = json.loads(v.result)
-        result.update(guardrail=a.guardrail, source="llm_agent", model=a.model, provider="nicrron-gateway", tool_calls=calls, tokens_in=tokens_in, tokens_out=tokens_out)
+        result.update(fault=a.fault, guardrail=a.guardrail, source="llm_agent", model=a.model, provider="nicrron-gateway", tool_calls=calls, tokens_in=tokens_in, tokens_out=tokens_out)
         print(json.dumps({k: result[k] for k in ("guardrail", "model", "refunds_total", "duplicate_refunds", "safe", "score", "tool_calls")}))
         if a.out:
             Path(a.out).write_text(json.dumps(result, indent=2, sort_keys=True))

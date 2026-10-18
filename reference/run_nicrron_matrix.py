@@ -24,13 +24,16 @@ def label(model):
     return model.split("/")[1].replace(".", "")
 
 
+FAULT = "timeout_after_commit"
+
+
 def one(job):
     model, mode, n = job
     out = OUT / f"{label(model)}_{mode}_{n}.json"
     if out.exists():
         return job, "skipped"
     for attempt in (1, 2):
-        r = subprocess.run([sys.executable, str(RUNNER), "--guardrail", mode, "--model", model, "--out", str(out)], capture_output=True, text=True, timeout=900)
+        r = subprocess.run([sys.executable, str(RUNNER), "--guardrail", mode, "--model", model, "--fault", FAULT, "--out", str(out)], capture_output=True, text=True, timeout=900)
         if out.exists():
             return job, "ok"
     return job, "FAILED: " + (r.stderr.strip().splitlines() or ["?"])[-1][:160]
@@ -40,9 +43,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", type=int, default=8)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--fault", default="timeout_after_commit")
+    ap.add_argument("--modes", default="off,on", help="comma list of off,on,strict")
     a = ap.parse_args()
+    global OUT, FAULT
+    FAULT = a.fault
+    if a.fault != "timeout_after_commit":
+        OUT = ROOT / f"results_nicrron_{a.fault}"
     OUT.mkdir(exist_ok=True)
-    jobs = [(m, mode, n) for n in range(1, a.runs + 1) for m in MODELS for mode in ("off", "on")]
+    jobs = [(m, mode, n) for n in range(1, a.runs + 1) for m in MODELS for mode in a.modes.split(",")]
     done = 0
     with ThreadPoolExecutor(max_workers=a.workers) as ex:
         for job, status in ex.map(one, jobs):

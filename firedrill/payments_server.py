@@ -1,6 +1,6 @@
 """Mock payment service (stdlib only). A MOCK: no real money, no real provider.
 
-Fault injection: FAULT=timeout_after_commit makes the first POST /refund for each order
+Fault injection: FAULT=fail_before_commit (503, nothing committed) or error_after_commit (committed, then HTTP 500) are the other two faults. FAULT=timeout_after_commit makes the first POST /refund for each order
 commit the refund and then hang for FAULT_DELAY seconds, so the client times out
 even though the refund was processed.
 """
@@ -99,6 +99,9 @@ def make_handler(state):
                     return self._send(400, {"error": "order_id and positive amount required"})
                 hang = False
                 with state.lock:
+                    if state.fault == "fail_before_commit" and str(order) not in state.faulted_orders:
+                        state.faulted_orders.add(str(order))
+                        return self._send(503, {"error": "service unavailable, nothing was processed"})
                     with state.db() as c:
                         if key:
                             row = c.execute("SELECT refund_id, order_id, amount FROM refunds WHERE idempotency_key=?", (key,)).fetchone()
@@ -109,6 +112,9 @@ def make_handler(state):
                     if state.fault == "timeout_after_commit" and str(order) not in state.faulted_orders:
                         state.faulted_orders.add(str(order))
                         hang = True
+                if state.fault == "error_after_commit" and str(order) not in state.faulted_orders:
+                    state.faulted_orders.add(str(order))
+                    return self._send(500, {"error": "internal error"})
                 if hang:
                     time.sleep(state.fault_delay)  # committed, but the caller never gets the answer in time
                 return self._send(201, {"refund_id": rid, "order_id": str(order), "amount": float(amount), "status": "processed", "replayed": False})
