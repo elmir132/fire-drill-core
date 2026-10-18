@@ -46,6 +46,29 @@ Fire Drill injects exactly that failure, lets a real model run, then checks the 
 
 32 runs in total, each in a fresh Daytona sandbox (raw verifier output in [`results/`](results) and [`results_extra/`](results_extra)). A cheaper agent fails without the guardrail; a stronger one passed this test, which only the drill could tell us. **One fault and a small sample: this is evidence that the method works, not proof that any agent is safe.**
 
+### More models, through the Nicrron gateway
+After the hackathon we ran the same scenario on 10 more models from 7 vendors through the Nicrron gateway (one OpenAI-compatible API): 8 runs per mode for each model, 160 runs, every one in a fresh Daytona sandbox. Same mock payment service, same fault, same instruction ("If a tool call fails, retry it") and the same hand-written guardrail.
+
+<p align="center"><img src="media/arena-chart.png" alt="Unsafe runs per model with the guardrail off and on" width="760"></p>
+
+| Model | Guardrail off: unsafe / runs | Guardrail on: unsafe / runs |
+|---|---|---|
+| Claude Haiku 5.5 | **8 / 8** | 0 / 8 |
+| Mistral Large 4 | **8 / 8** | 0 / 8 |
+| Grok 4.7 | **8 / 8** | 0 / 8 |
+| DeepSeek V4 Pro | **7 / 8** | 0 / 8 |
+| GPT-6 Luna | **6 / 8** | 0 / 8 |
+| Kimi K3 | **4 / 8** | 0 / 8 |
+| GLM 5.3 | **4 / 8** | 0 / 8 |
+| Claude Fable 5.1 | 0 / 8 | 0 / 8 |
+| Claude Opus 5.5 | 0 / 8 | 0 / 8 |
+| GPT-6 Sol | 0 / 8 | 0 / 8 |
+
+- **With the guardrail on, 0 of 80 runs were unsafe**, for every model. The guardrail is deterministic code (a stable idempotency key, a ledger check after a timeout, one retry), so it does not depend on which model is behind it.
+- **Without it, 45 of 80 runs refunded twice.** Three models did it in all 8 runs, three flagship models in none, and Kimi K3 and GLM 5.3 in half of their runs: the same model on the same prompt can pass one run and fail the next, so a single clean run proves little.
+- **Limits:** the same single fault and 8 runs per mode, so these are rates from a small sample, not safety ratings. GPT-6 Astra was tried and left out: through this gateway it only accepts tools on an endpoint (`/v1/responses`) that the gateway does not offer. These runs were not traced in Arize (only the Amazon Bedrock runs were). Model names are as served by the gateway.
+- **Reproduce:** set `NICRRON_API_KEY` and `DAYTONA_API_KEY` in `.env`, then `python reference/run_nicrron_matrix.py`, `python reference/aggregate_nicrron.py` and `python reference/make_arena_assets.py`. The 160 runs cost about $1.50 in API credit at list prices.
+
 ## How it works
 <p align="center"><img src="media/architecture.png" alt="Architecture: agent on the host, payment service and ledger in a Daytona sandbox, verifier, Arize AX" width="860"></p>
 
@@ -63,7 +86,8 @@ Fire Drill injects exactly that failure, lets a real model run, then checks the 
 |---|---|
 | `firedrill/` | The core, standard library only: mock payment service, tools, CLI, verifier, guardrail, simulator |
 | `reference/` | Runners proven on real Daytona sandboxes and Bedrock: scripted policy, Claude agent, measurement matrix, aggregation |
-| `results/`, `results_extra/` | Raw verifier JSON of all 32 measured runs |
+| `results/`, `results_extra/` | Raw verifier JSON of the 32 Amazon Bedrock runs |
+| `results_nicrron/` | Raw verifier JSON of the 160 gateway runs, plus `summary.json` |
 | `docs/` | Source of the interactive demo site (GitHub Pages) |
 | `scoreboard/` | Local before/after page |
 | `media/` | Demo video, subtitles, GIF, screenshots, diagrams |
@@ -115,6 +139,6 @@ Static page with a replay of real recorded runs, an in-browser simulator and the
 - Submission repo: https://github.com/ZeroSSD/agent-fire-drill (Sahil Dhumale). This repo holds the core, the measured results, the demo site source and the media. Team: Elmir Abdullaiev and Sahil Dhumale.
 - Demo site (recorded results and an in-browser simulator, no live calls): https://elmir132.github.io/fire-drill-core/
 - Demo video (88 s): https://youtu.be/OMT_-FZxM2I, with a copy and subtitles in `media/`.
-- Measured runs, 32 in total (8 per mode per model, in `results/` and `results_extra/`), mock payment service, one fault (timeout after commit): Claude Haiku 4.5 on Amazon Bedrock double-refunded in 8 of 8 runs without the guardrail and in 0 of 8 with it; Claude Sonnet 5.5 was safe in 16 of 16. Small sample, one fault: evidence that the method works, not a safety guarantee.
+- Measured runs, 32 in total (8 per mode per model, in `results/` and `results_extra/`), mock payment service, one fault (timeout after commit): Claude Haiku 4.5 on Amazon Bedrock double-refunded in 8 of 8 runs without the guardrail and in 0 of 8 with it; Claude Sonnet 5.5 was safe in 16 of 16. Small sample, one fault: evidence that the method works, not a safety guarantee. A further 160 runs on 10 other models through the Nicrron gateway are in `results_nicrron/` (guardrail on: 0 of 80 unsafe; off: 45 of 80).
 - Briefing with the exact values and likely questions: `notes/DEFENSE_BRIEF.md`.
 - Built with AI coding assistants (Claude Code and Codex), reviewed and tested by the team.
