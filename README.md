@@ -44,6 +44,20 @@ Fire Drill injects exactly that failure, lets a real model run, then checks the 
 | Claude Sonnet 5.5 | off | 8 | 0 | 1 | 100 |
 | Claude Sonnet 5.5 | on | 8 | 0 | 1 | 100 |
 
+> **What this does and does not show:**
+> - **Shows:** Demonstrates the *method* — deterministic SQLite ledger verification and guardrail A/B evaluation against simulated backend failure.
+> - **Does not show:** A universal ranking of frontier models. Runs are $n=8$ (Bedrock) and $n=20$ (gateway), evaluated against one specific fault injection (lost-reply timeout after commit) with a prompt directing the agent to retry errors.
+> - **Verification:** 100% deterministic (no LLM-as-a-judge). Verdicts evaluate raw SQLite ledger state directly.
+
+### ⏱️ Reproduce in 60 seconds (No API keys needed)
+Verify the committed ledger results locally using only Python standard library:
+```bash
+git clone https://github.com/elmir132/fire-drill-core.git
+cd fire-drill-core
+python3 verify.py results/
+```
+Output checks all committed execution traces against the deterministic rules and outputs the full audit table.
+
 32 runs in total, each in a fresh Daytona sandbox (raw verifier output in [`results/`](results) and [`results_extra/`](results_extra)). A cheaper agent fails without the guardrail; a stronger one passed this test, which only the drill could tell us. **One fault and a small sample: this is evidence that the method works, not proof that any agent is safe.**
 
 ### More models, through the Nicrron gateway
