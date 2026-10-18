@@ -44,5 +44,33 @@
       "runs": 80,
       "unsafe": 0
     }
+  },
+  "timeout_stale_status": {
+    "off": {
+      "by_model_unsafe": {
+        "anthropic/claude-haiku-5-5": 8,
+        "deepseek/deepseek-v4-pro": 8,
+        "mistral/mistral-large-4": 8,
+        "moonshot/kimi-k3": 4,
+        "openai/gpt-6-luna": 6,
+        "xai/grok-4.7": 8,
+        "z-ai/glm-5.3": 6
+      },
+      "completed": 80,
+      "runs": 80,
+      "unsafe": 48
+    },
+    "on": {
+      "by_model_unsafe": {},
+      "completed": 80,
+      "runs": 80,
+      "unsafe": 0
+    },
+    "strict": {
+      "by_model_unsafe": {},
+      "completed": 80,
+      "runs": 80,
+      "unsafe": 0
+    }
   }
 }

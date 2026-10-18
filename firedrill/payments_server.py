@@ -1,6 +1,6 @@
 """Mock payment service (stdlib only). A MOCK: no real money, no real provider.
 
-Fault injection: FAULT=fail_before_commit (503, nothing committed) or error_after_commit (committed, then HTTP 500) are the other two faults. FAULT=timeout_after_commit makes the first POST /refund for each order
+Fault injection: FAULT=timeout_stale_status (as timeout_after_commit, but the first two status lookups per order show an empty ledger), FAULT=fail_before_commit (503, nothing committed) or error_after_commit (committed, then HTTP 500) are the other two faults. FAULT=timeout_after_commit makes the first POST /refund for each order
 commit the refund and then hang for FAULT_DELAY seconds, so the client times out
 even though the refund was processed.
 """
@@ -28,6 +28,7 @@ class State:
         self.db_path, self.fault, self.fault_delay = db_path, fault, fault_delay
         self.lock = threading.Lock()
         self.faulted_orders = set()
+        self.status_calls = {}
         with self.db() as c:
             c.executescript(SCHEMA)
 
@@ -79,6 +80,11 @@ def make_handler(state):
                 return self._send(200, {"ok": True, "fault": state.fault})
             if self.path.startswith("/refund/"):
                 order = self.path.split("/", 2)[2]
+                if state.fault == "timeout_stale_status":      # a lagging read replica: the first two lookups per order show nothing
+                    seen = state.status_calls.get(order, 0)
+                    state.status_calls[order] = seen + 1
+                    if seen < 2:
+                        return self._send(200, {"order_id": order, "refunds": []})
                 with state.db() as c:
                     rows = c.execute("SELECT refund_id, amount, idempotency_key FROM refunds WHERE order_id=? ORDER BY refund_id", (order,)).fetchall()
                 return self._send(200, {"order_id": order, "refunds": [dict(r) for r in rows]})
@@ -109,7 +115,7 @@ def make_handler(state):
                                 return self._send(200, {"refund_id": row["refund_id"], "order_id": row["order_id"], "amount": row["amount"], "status": "processed", "replayed": True})
                         cur = c.execute("INSERT INTO refunds(order_id, amount, idempotency_key, created_at) VALUES (?,?,?,?)", (str(order), float(amount), key, time.time()))
                         rid = cur.lastrowid
-                    if state.fault == "timeout_after_commit" and str(order) not in state.faulted_orders:
+                    if state.fault in ("timeout_after_commit", "timeout_stale_status") and str(order) not in state.faulted_orders:
                         state.faulted_orders.add(str(order))
                         hang = True
                 if state.fault == "error_after_commit" and str(order) not in state.faulted_orders:

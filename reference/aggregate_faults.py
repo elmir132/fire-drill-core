@@ -9,7 +9,7 @@ import os
 from collections import defaultdict
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FAULTS = ("fail_before_commit", "error_after_commit")
+FAULTS = ("fail_before_commit", "error_after_commit", "timeout_stale_status")
 
 
 def main():

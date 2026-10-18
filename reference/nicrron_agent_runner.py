@@ -65,7 +65,7 @@ def main():
     ap.add_argument("--model", required=True)
     ap.add_argument("--out")
     ap.add_argument("--max-turns", type=int, default=8)
-    ap.add_argument("--fault", default="timeout_after_commit", choices=["timeout_after_commit", "fail_before_commit", "error_after_commit"])
+    ap.add_argument("--fault", default="timeout_after_commit", choices=["timeout_after_commit", "fail_before_commit", "error_after_commit", "timeout_stale_status"])
     a = ap.parse_args()
     load_env()
     for k in ("DAYTONA_API_KEY", "NICRRON_API_KEY"):

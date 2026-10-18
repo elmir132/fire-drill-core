@@ -114,3 +114,15 @@ class NewFaultServerTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StaleStatusFaultTest(NewFaultServerTest):
+    def test_timeout_stale_status_commits_then_hides_it_from_the_first_two_lookups(self):
+        base = self._serve("timeout_stale_status")
+        try:
+            self._post(base, {"order_id": "1001", "amount": 100})   # commits, then answers late
+        except Exception:
+            pass
+        self.assertEqual(self._count(base), 0)
+        self.assertEqual(self._count(base), 0)
+        self.assertEqual(self._count(base), 1)

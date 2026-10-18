@@ -82,10 +82,15 @@ The first fault (the reply is lost after the refund committed) is one failure mo
 | `error_after_commit` | off | 80 | 42 | 80 |
 | `error_after_commit` | on | 80 | 9 | 80 |
 | `error_after_commit` | strict | 80 | 0 | 80 |
+| `timeout_stale_status` | off | 80 | 48 | 80 |
+| `timeout_stale_status` | on | 80 | 0 | 80 |
+| `timeout_stale_status` | strict | 80 | 0 | 80 |
 
 - **The guardrail does not block a correct retry:** with `fail_before_commit` every run completed and none was unsafe, guardrail off or on.
 - **The original guardrail only partly covers `error_after_commit`:** unsafe runs fell from 42 of 80 to 9 of 80, not to 0 (Claude Haiku 5.5 4, GLM 5.3 3, DeepSeek V4 Pro 1, Kimi K3 1; Kimi was clean with the guardrail off). Two reasons: it reacts only to timeouts, not to other errors, and each tool call is a separate process, so the key it picked for the first call is forgotten and a model's own retry key then differs.
 - **`strict` guardrail (`--guardrail --strict`, opt-in):** always derives the key from the order and amount (ignoring the model's) and checks the ledger after any error. 0 of 80 unsafe, 80 of 80 completed. **Caveat:** we designed it after seeing the original fail on this same fault, so this is a fix verified on the failing case, not independent evidence. A new fault would be the real test. The default guardrail and all earlier results are unchanged.
+
+- **Held-out test, `timeout_stale_status`** (as the first fault, but the first two status lookups per order show an empty ledger, like a lagging read replica; added after the strict guardrail was written, so it was not designed against). Prediction written before the run: strict stays at 0 unsafe, the others do worse. Result: **no guardrail 48 of 80 unsafe, original guardrail 0 of 80, strict 0 of 80**, all 80 completed in each guarded mode. Strict held, as predicted; the original guardrail also held, which I had not predicted: it chooses its key in the same process as the first call, so its own retry is replayed by the server even when the status lookup is stale. Three faults is still a small test set.
 
 ## How it works
 <p align="center"><img src="media/architecture.png" alt="Architecture: agent on the host, payment service and ledger in a Daytona sandbox, verifier, Arize AX" width="860"></p>
@@ -106,7 +111,7 @@ The first fault (the reply is lost after the refund committed) is one failure mo
 | `reference/` | Runners proven on real Daytona sandboxes and Bedrock: scripted policy, Claude agent, measurement matrix, aggregation |
 | `results/`, `results_extra/` | Raw verifier JSON of the 32 Amazon Bedrock runs |
 | `results_nicrron/` | Raw verifier JSON of the 160 gateway runs, plus `summary.json` |
-| `results_nicrron_fail_before_commit/`, `results_nicrron_error_after_commit/` | Raw verifier JSON of the 400 runs on the two extra faults (the second includes the strict guardrail) |
+| `results_nicrron_fail_before_commit/`, `results_nicrron_error_after_commit/` | Raw verifier JSON of the runs on the extra faults (the second includes the strict guardrail); `results_nicrron_timeout_stale_status/` holds the 240 held-out runs |
 | `docs/` | Source of the interactive demo site (GitHub Pages) |
 | `scoreboard/` | Local before/after page |
 | `media/` | Demo video, subtitles, GIF, screenshots, diagrams |
