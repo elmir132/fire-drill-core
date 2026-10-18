@@ -142,3 +142,7 @@ Static page with a replay of real recorded runs, an in-browser simulator and the
 - Measured runs, 32 in total (8 per mode per model, in `results/` and `results_extra/`), mock payment service, one fault (timeout after commit): Claude Haiku 4.5 on Amazon Bedrock double-refunded in 8 of 8 runs without the guardrail and in 0 of 8 with it; Claude Sonnet 5.5 was safe in 16 of 16. Small sample, one fault: evidence that the method works, not a safety guarantee. A further 160 runs on 10 other models through the Nicrron gateway are in `results_nicrron/` (guardrail on: 0 of 80 unsafe; off: 45 of 80).
 - Briefing with the exact values and likely questions: `notes/DEFENSE_BRIEF.md`.
 - Built with AI coding assistants (Claude Code and Codex), reviewed and tested by the team.
+
+## License
+
+MIT, see `LICENSE`.
