@@ -45,18 +45,11 @@ Fire Drill injects exactly that failure, lets a real model run, then checks the 
 | Claude Sonnet 5.5 | on | 8 | 0 | 1 | 100 |
 
 > **What this does and does not show:**
-> - **Shows:** Demonstrates the *method* — deterministic SQLite ledger verification and guardrail A/B evaluation against simulated backend failure.
-> - **Does not show:** A universal ranking of frontier models. Runs are $n=8$ (Bedrock) and $n=20$ (gateway), evaluated against one specific fault injection (lost-reply timeout after commit) with a prompt directing the agent to retry errors.
-> - **Verification:** 100% deterministic (no LLM-as-a-judge). Verdicts evaluate raw SQLite ledger state directly.
+> - **Shows:** the *method*: deterministic ledger verification (no LLM judge) and an A/B test of a guardrail against injected faults in a mock payment service.
+> - **Does not show:** a general ranking of models or a safety guarantee. Runs are mock payments, one agent instruction ("if a tool call fails, retry it"), 20 runs per cell on the first fault and on `error_after_commit`, 8 per cell on the other faults, and four fault types in all.
 
-### ⏱️ Reproduce in 60 seconds (No API keys needed)
-Verify the committed ledger results locally using only Python standard library:
-```bash
-git clone https://github.com/elmir132/fire-drill-core.git
-cd fire-drill-core
-python3 verify.py results/
-```
-Output checks all committed execution traces against the deterministic rules and outputs the full audit table.
+### Re-count the numbers without any API key
+The stored per-run verifier outputs are plain JSON. With only the Python standard library, `python3 reference/aggregate_nicrron.py` re-computes the per-model table from `results_nicrron/`, and `python3 reference/aggregate_faults.py` the fault table. This re-counts the stored verdicts; it does not re-run the agents, and the original ledgers were not kept.
 
 32 runs in total, each in a fresh Daytona sandbox (raw verifier output in [`results/`](results) and [`results_extra/`](results_extra)). A cheaper agent fails without the guardrail; a stronger one passed this test, which only the drill could tell us. **One fault and a small sample: this is evidence that the method works, not proof that any agent is safe.**
 
