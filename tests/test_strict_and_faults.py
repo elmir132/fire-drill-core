@@ -126,3 +126,14 @@ class StaleStatusFaultTest(NewFaultServerTest):
         self.assertEqual(self._count(base), 0)
         self.assertEqual(self._count(base), 0)
         self.assertEqual(self._count(base), 1)
+
+
+class RateLimitedRetryFaultTest(NewFaultServerTest):
+    def test_timeout_then_429_commits_first_rate_limits_the_retry_then_allows_a_third(self):
+        base = self._serve("timeout_then_429")
+        self._post(base, {"order_id": "1001", "amount": 100})           # commits, answers late
+        self.assertEqual(self._count(base), 1)
+        self.assertEqual(self._post(base, {"order_id": "1001", "amount": 100}), 429)
+        self.assertEqual(self._count(base), 1)
+        self.assertEqual(self._post(base, {"order_id": "1001", "amount": 100, "idempotency_key": "k"}), 201)
+        self.assertEqual(self._count(base), 2)

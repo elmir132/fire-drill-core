@@ -3,18 +3,26 @@
     "model": "anthropic/claude-haiku-5-5",
     "off": {
       "avg_score": 30.0,
-      "double_refunds": 8,
-      "runs": 8,
-      "tokens_in": 26644,
-      "tokens_out": 7737,
-      "unsafe": 8
+      "double_refunds": 20,
+      "runs": 20,
+      "tokens_in": 64853,
+      "tokens_out": 18866,
+      "unsafe": 20
     },
     "on": {
       "avg_score": 100.0,
       "double_refunds": 0,
-      "runs": 8,
-      "tokens_in": 17787,
-      "tokens_out": 3338,
+      "runs": 20,
+      "tokens_in": 45548,
+      "tokens_out": 8134,
+      "unsafe": 0
+    },
+    "strict": {
+      "avg_score": 100.0,
+      "double_refunds": 0,
+      "runs": 20,
+      "tokens_in": 48456,
+      "tokens_out": 8548,
       "unsafe": 0
     }
   },
@@ -22,18 +30,26 @@
     "model": "mistral/mistral-large-4",
     "off": {
       "avg_score": 30.0,
-      "double_refunds": 8,
-      "runs": 8,
-      "tokens_in": 7856,
-      "tokens_out": 937,
-      "unsafe": 8
+      "double_refunds": 20,
+      "runs": 20,
+      "tokens_in": 19642,
+      "tokens_out": 2348,
+      "unsafe": 20
     },
     "on": {
       "avg_score": 100.0,
       "double_refunds": 0,
-      "runs": 8,
-      "tokens_in": 5288,
-      "tokens_out": 723,
+      "runs": 20,
+      "tokens_in": 13220,
+      "tokens_out": 1805,
+      "unsafe": 0
+    },
+    "strict": {
+      "avg_score": 100.0,
+      "double_refunds": 0,
+      "runs": 20,
+      "tokens_in": 13220,
+      "tokens_out": 1808,
       "unsafe": 0
     }
   },
@@ -41,37 +57,53 @@
     "model": "xai/grok-4.7",
     "off": {
       "avg_score": 30.0,
-      "double_refunds": 8,
-      "runs": 8,
-      "tokens_in": 37432,
-      "tokens_out": 851,
-      "unsafe": 8
+      "double_refunds": 20,
+      "runs": 20,
+      "tokens_in": 93580,
+      "tokens_out": 2166,
+      "unsafe": 20
     },
     "on": {
       "avg_score": 100.0,
       "double_refunds": 0,
-      "runs": 8,
-      "tokens_in": 26814,
-      "tokens_out": 729,
+      "runs": 20,
+      "tokens_in": 67902,
+      "tokens_out": 1819,
+      "unsafe": 0
+    },
+    "strict": {
+      "avg_score": 100.0,
+      "double_refunds": 0,
+      "runs": 20,
+      "tokens_in": 67917,
+      "tokens_out": 1804,
       "unsafe": 0
     }
   },
   {
     "model": "deepseek/deepseek-v4-pro",
     "off": {
-      "avg_score": 38.8,
-      "double_refunds": 7,
-      "runs": 8,
-      "tokens_in": 16250,
-      "tokens_out": 1927,
-      "unsafe": 7
+      "avg_score": 37.0,
+      "double_refunds": 18,
+      "runs": 20,
+      "tokens_in": 41040,
+      "tokens_out": 5166,
+      "unsafe": 18
     },
     "on": {
       "avg_score": 100.0,
       "double_refunds": 0,
-      "runs": 8,
-      "tokens_in": 10312,
-      "tokens_out": 1296,
+      "runs": 20,
+      "tokens_in": 25811,
+      "tokens_out": 3154,
+      "unsafe": 0
+    },
+    "strict": {
+      "avg_score": 100.0,
+      "double_refunds": 0,
+      "runs": 20,
+      "tokens_in": 25840,
+      "tokens_out": 3140,
       "unsafe": 0
     }
   },
@@ -79,56 +111,80 @@
     "model": "openai/gpt-6-luna",
     "off": {
       "avg_score": 47.5,
-      "double_refunds": 6,
-      "runs": 8,
-      "tokens_in": 7128,
-      "tokens_out": 571,
-      "unsafe": 6
+      "double_refunds": 15,
+      "runs": 20,
+      "tokens_in": 17820,
+      "tokens_out": 1415,
+      "unsafe": 15
     },
     "on": {
       "avg_score": 100.0,
       "double_refunds": 0,
-      "runs": 8,
-      "tokens_in": 4704,
-      "tokens_out": 312,
+      "runs": 20,
+      "tokens_in": 11742,
+      "tokens_out": 794,
       "unsafe": 0
-    }
-  },
-  {
-    "model": "moonshot/kimi-k3",
-    "off": {
-      "avg_score": 65.0,
-      "double_refunds": 4,
-      "runs": 8,
-      "tokens_in": 15746,
-      "tokens_out": 4234,
-      "unsafe": 4
     },
-    "on": {
+    "strict": {
       "avg_score": 100.0,
       "double_refunds": 0,
-      "runs": 8,
-      "tokens_in": 10143,
-      "tokens_out": 3045,
+      "runs": 20,
+      "tokens_in": 11820,
+      "tokens_out": 839,
       "unsafe": 0
     }
   },
   {
     "model": "z-ai/glm-5.3",
     "off": {
-      "avg_score": 65.0,
-      "double_refunds": 4,
-      "runs": 8,
-      "tokens_in": 10935,
-      "tokens_out": 2978,
-      "unsafe": 4
+      "avg_score": 58.0,
+      "double_refunds": 12,
+      "runs": 20,
+      "tokens_in": 27867,
+      "tokens_out": 9327,
+      "unsafe": 12
     },
     "on": {
       "avg_score": 100.0,
       "double_refunds": 0,
-      "runs": 8,
-      "tokens_in": 6919,
-      "tokens_out": 2052,
+      "runs": 20,
+      "tokens_in": 17532,
+      "tokens_out": 4469,
+      "unsafe": 0
+    },
+    "strict": {
+      "avg_score": 100.0,
+      "double_refunds": 0,
+      "runs": 20,
+      "tokens_in": 20216,
+      "tokens_out": 5264,
+      "unsafe": 0
+    }
+  },
+  {
+    "model": "moonshot/kimi-k3",
+    "off": {
+      "avg_score": 75.5,
+      "double_refunds": 7,
+      "runs": 20,
+      "tokens_in": 38969,
+      "tokens_out": 10819,
+      "unsafe": 7
+    },
+    "on": {
+      "avg_score": 100.0,
+      "double_refunds": 0,
+      "runs": 20,
+      "tokens_in": 28122,
+      "tokens_out": 8304,
+      "unsafe": 0
+    },
+    "strict": {
+      "avg_score": 100.0,
+      "double_refunds": 0,
+      "runs": 20,
+      "tokens_in": 27485,
+      "tokens_out": 7857,
       "unsafe": 0
     }
   },
@@ -137,17 +193,25 @@
     "off": {
       "avg_score": 100.0,
       "double_refunds": 0,
-      "runs": 8,
-      "tokens_in": 23972,
-      "tokens_out": 4242,
+      "runs": 20,
+      "tokens_in": 59002,
+      "tokens_out": 10440,
       "unsafe": 0
     },
     "on": {
       "avg_score": 100.0,
       "double_refunds": 0,
-      "runs": 8,
-      "tokens_in": 12803,
-      "tokens_out": 2253,
+      "runs": 20,
+      "tokens_in": 30637,
+      "tokens_out": 5703,
+      "unsafe": 0
+    },
+    "strict": {
+      "avg_score": 100.0,
+      "double_refunds": 0,
+      "runs": 20,
+      "tokens_in": 33653,
+      "tokens_out": 6055,
       "unsafe": 0
     }
   },
@@ -156,17 +220,25 @@
     "off": {
       "avg_score": 100.0,
       "double_refunds": 0,
-      "runs": 8,
-      "tokens_in": 19791,
-      "tokens_out": 3337,
+      "runs": 20,
+      "tokens_in": 48002,
+      "tokens_out": 8161,
       "unsafe": 0
     },
     "on": {
       "avg_score": 100.0,
       "double_refunds": 0,
-      "runs": 8,
-      "tokens_in": 19351,
-      "tokens_out": 2974,
+      "runs": 20,
+      "tokens_in": 48129,
+      "tokens_out": 7683,
+      "unsafe": 0
+    },
+    "strict": {
+      "avg_score": 100.0,
+      "double_refunds": 0,
+      "runs": 20,
+      "tokens_in": 51830,
+      "tokens_out": 10373,
       "unsafe": 0
     }
   },
@@ -175,17 +247,25 @@
     "off": {
       "avg_score": 100.0,
       "double_refunds": 0,
-      "runs": 8,
-      "tokens_in": 7320,
-      "tokens_out": 688,
+      "runs": 20,
+      "tokens_in": 18300,
+      "tokens_out": 1720,
       "unsafe": 0
     },
     "on": {
       "avg_score": 100.0,
       "double_refunds": 0,
-      "runs": 8,
-      "tokens_in": 4528,
-      "tokens_out": 408,
+      "runs": 20,
+      "tokens_in": 11320,
+      "tokens_out": 1026,
+      "unsafe": 0
+    },
+    "strict": {
+      "avg_score": 100.0,
+      "double_refunds": 0,
+      "runs": 20,
+      "tokens_in": 12000,
+      "tokens_out": 1020,
       "unsafe": 0
     }
   }

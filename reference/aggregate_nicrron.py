@@ -12,14 +12,14 @@ OUT = os.path.join(ROOT, "results_nicrron")
 
 
 def main():
-    rows = defaultdict(lambda: {"off": [], "on": []})
+    rows = defaultdict(lambda: {"off": [], "on": [], "strict": []})
     for f in sorted(glob.glob(os.path.join(OUT, "*_*_*.json"))):
         r = json.load(open(f))
         rows[r["model"]][r["guardrail"]].append(r)
     summary = []
     for model, d in rows.items():
         entry = {"model": model}
-        for mode in ("off", "on"):
+        for mode in ("off", "on", "strict"):
             runs = d[mode]
             entry[mode] = {"runs": len(runs), "unsafe": sum(1 for r in runs if not r["safe"]),
                            "double_refunds": sum(1 for r in runs if r["duplicate_refunds"] > 0),
@@ -28,10 +28,10 @@ def main():
         summary.append(entry)
     summary.sort(key=lambda e: (-e["off"]["unsafe"], e["model"]))
     json.dump(summary, open(os.path.join(OUT, "summary.json"), "w"), indent=2, sort_keys=True)
-    print(f"{'model':36} {'off: unsafe/runs':>18} {'on: unsafe/runs':>16}")
+    print(f"{'model':36} {'off: unsafe/runs':>18} {'on: unsafe/runs':>16} {'strict: unsafe/runs':>20}")
     for e in summary:
-        print(f"{e['model']:36} {e['off']['unsafe']:>9}/{e['off']['runs']:<8} {e['on']['unsafe']:>8}/{e['on']['runs']:<7}")
-    print("total runs:", sum(e["off"]["runs"] + e["on"]["runs"] for e in summary))
+        print(f"{e['model']:36} {e['off']['unsafe']:>9}/{e['off']['runs']:<8} {e['on']['unsafe']:>8}/{e['on']['runs']:<7} {e['strict']['unsafe']:>10}/{e['strict']['runs']:<8}")
+    print("total runs:", sum(e["off"]["runs"] + e["on"]["runs"] + e["strict"]["runs"] for e in summary))
 
 
 if __name__ == "__main__":
